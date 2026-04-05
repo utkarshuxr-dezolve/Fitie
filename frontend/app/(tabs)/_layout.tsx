@@ -1,14 +1,18 @@
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Text } from 'react-native';
-import { Home, Dumbbell, UtensilsCrossed, Heart, User } from 'lucide-react-native';
-import { colors, spacing } from '@/src/theme';
+import { Home, Dumbbell, UtensilsCrossed, Activity, User } from 'lucide-react-native';
+import { colors } from '@/src/theme';
 
 function TabIcon({ icon: Icon, focused, label }: { icon: any; focused: boolean; label: string }) {
   return (
     <View style={styles.tabItem}>
-      <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
-        <Icon size={22} color={focused ? colors.primary : '#9CA3AF'} strokeWidth={2} />
-      </View>
+      {focused ? (
+        <View style={styles.activeWrap}>
+          <Icon size={20} color={colors.textInverse} strokeWidth={2.5} />
+        </View>
+      ) : (
+        <Icon size={22} color={colors.tabInactive} strokeWidth={1.8} />
+      )}
       <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
     </View>
   );
@@ -23,78 +27,37 @@ export default function TabLayout() {
         tabBarShowLabel: false,
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon={Home} focused={focused} label="Home" />,
-          tabBarTestID: 'home-tab',
-        }}
-      />
-      <Tabs.Screen
-        name="activity"
-        options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon={Dumbbell} focused={focused} label="Activity" />,
-          tabBarTestID: 'activity-tab',
-        }}
-      />
-      <Tabs.Screen
-        name="nutrition"
-        options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon={UtensilsCrossed} focused={focused} label="Nutrition" />,
-          tabBarTestID: 'nutrition-tab',
-        }}
-      />
-      <Tabs.Screen
-        name="health"
-        options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon={Heart} focused={focused} label="Health" />,
-          tabBarTestID: 'health-tab',
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          tabBarIcon: ({ focused }) => <TabIcon icon={User} focused={focused} label="Profile" />,
-          tabBarTestID: 'profile-tab',
-        }}
-      />
+      <Tabs.Screen name="index" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Home} focused={focused} label="Home" />, tabBarTestID: 'home-tab' }} />
+      <Tabs.Screen name="activity" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Dumbbell} focused={focused} label="Activity" />, tabBarTestID: 'activity-tab' }} />
+      <Tabs.Screen name="nutrition" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={UtensilsCrossed} focused={focused} label="Nutrition" />, tabBarTestID: 'nutrition-tab' }} />
+      <Tabs.Screen name="health" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Activity} focused={focused} label="Health" />, tabBarTestID: 'health-tab' }} />
+      <Tabs.Screen name="profile" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={User} focused={focused} label="Profile" />, tabBarTestID: 'profile-tab' }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    height: 80,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-    elevation: 0,
-    shadowOpacity: 0,
+    backgroundColor: colors.tabBg,
+    borderTopWidth: 0,
+    height: 82,
+    paddingTop: 8,
+    paddingBottom: 18,
+    elevation: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
   },
-  tabItem: {
+  tabItem: { alignItems: 'center', justifyContent: 'center', gap: 4 },
+  activeWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
   },
-  iconWrap: {
-    width: 44,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconWrapActive: {
-    backgroundColor: '#EBF3ED',
-  },
-  tabLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#9CA3AF',
-  },
-  tabLabelActive: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
+  tabLabel: { fontSize: 10, fontWeight: '600', color: colors.tabInactive, marginTop: 2 },
+  tabLabelActive: { color: colors.primary },
 });

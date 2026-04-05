@@ -1,138 +1,110 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TextInput, Modal, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { UtensilsCrossed, Plus, Search, X, Coffee, Sun, Moon, Cookie } from 'lucide-react-native';
+import { Plus, Search, X, Coffee, Sun, Moon, Cookie, ChevronRight } from 'lucide-react-native';
 import { nutritionAPI } from '@/src/api';
-import { colors, spacing, radius, typography } from '@/src/theme';
+import { colors, spacing, radius, typography, shadows } from '@/src/theme';
 
-const mealTypeIcons: any = { breakfast: Coffee, lunch: Sun, dinner: Moon, snack: Cookie };
+const mealIcons: any = { breakfast: Coffee, lunch: Sun, dinner: Moon, snack: Cookie };
 
 export default function NutritionScreen() {
   const [todayData, setTodayData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [searchQ, setSearchQ] = useState('');
+  const [searchRes, setSearchRes] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
-  const [selectedMealType, setSelectedMealType] = useState('lunch');
-  const [manualFood, setManualFood] = useState({ food_name: '', calories: '', protein: '', carbs: '', fat: '' });
+  const [mealType, setMealType] = useState('lunch');
+  const [manual, setManual] = useState({ food_name: '', calories: '', protein: '', carbs: '', fat: '' });
 
   const loadData = useCallback(async () => {
-    try {
-      const { data } = await nutritionAPI.getToday();
-      setTodayData(data);
-    } catch (e) { console.log('Nutrition load error:', e); }
+    try { const { data } = await nutritionAPI.getToday(); setTodayData(data); }
+    catch (e) { console.log('Nutrition load error:', e); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
 
   const handleSearch = async (q: string) => {
-    setSearchQuery(q);
-    if (q.length < 2) { setSearchResults([]); return; }
+    setSearchQ(q);
+    if (q.length < 2) { setSearchRes([]); return; }
     setSearching(true);
-    try {
-      const { data } = await nutritionAPI.searchFoods(q);
-      setSearchResults(data);
-    } catch { setSearchResults([]); }
+    try { const { data } = await nutritionAPI.searchFoods(q); setSearchRes(data); }
+    catch { setSearchRes([]); }
     finally { setSearching(false); }
   };
 
   const addFromSearch = async (food: any) => {
     try {
-      await nutritionAPI.logMeal({
-        food_name: food.name,
-        calories: food.calories,
-        protein: food.protein || 0,
-        carbs: food.carbs || 0,
-        fat: food.fat || 0,
-        meal_type: selectedMealType,
-      });
-      setShowAddModal(false);
-      setSearchQuery('');
-      setSearchResults([]);
-      loadData();
+      await nutritionAPI.logMeal({ food_name: food.name, calories: food.calories, protein: food.protein || 0, carbs: food.carbs || 0, fat: food.fat || 0, meal_type: mealType });
+      setShowAdd(false); setSearchQ(''); setSearchRes([]); loadData();
     } catch { Alert.alert('Error', 'Could not log meal'); }
   };
 
   const addManual = async () => {
-    if (!manualFood.food_name || !manualFood.calories) {
-      Alert.alert('Required', 'Name and calories are required');
-      return;
-    }
+    if (!manual.food_name || !manual.calories) { Alert.alert('Required', 'Name and calories required'); return; }
     try {
-      await nutritionAPI.logMeal({
-        food_name: manualFood.food_name,
-        calories: parseFloat(manualFood.calories),
-        protein: parseFloat(manualFood.protein) || 0,
-        carbs: parseFloat(manualFood.carbs) || 0,
-        fat: parseFloat(manualFood.fat) || 0,
-        meal_type: selectedMealType,
-      });
-      setShowAddModal(false);
-      setManualFood({ food_name: '', calories: '', protein: '', carbs: '', fat: '' });
-      loadData();
+      await nutritionAPI.logMeal({ food_name: manual.food_name, calories: parseFloat(manual.calories), protein: parseFloat(manual.protein) || 0, carbs: parseFloat(manual.carbs) || 0, fat: parseFloat(manual.fat) || 0, meal_type: mealType });
+      setShowAdd(false); setManual({ food_name: '', calories: '', protein: '', carbs: '', fat: '' }); loadData();
     } catch { Alert.alert('Error', 'Could not log meal'); }
   };
 
-  const calGoal = 2200;
-  const calPct = todayData ? Math.min((todayData.totals.calories / calGoal) * 100, 100) : 0;
+  const goal = 2200;
+  const eaten = todayData?.totals?.calories || 0;
+  const pct = Math.min((eaten / goal) * 100, 100);
 
-  if (loading) {
-    return <SafeAreaView style={styles.safe}><View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View></SafeAreaView>;
-  }
+  if (loading) return <SafeAreaView style={s.safe}><View style={s.center}><ActivityIndicator size="large" color={colors.primary} /></View></SafeAreaView>;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={colors.primary} />} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerRow}>
-          <Text style={styles.pageTitle}>Nutrition</Text>
-          <TouchableOpacity testID="add-meal-btn" style={styles.addBtn} onPress={() => setShowAddModal(true)}>
-            <Plus size={20} color={colors.textInverse} />
+    <SafeAreaView style={s.safe} edges={['top']}>
+      <ScrollView style={s.scroll} contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={colors.primary} />} showsVerticalScrollIndicator={false}>
+        <View style={s.headRow}>
+          <Text style={s.pageTitle}>Nutrition</Text>
+          <TouchableOpacity testID="add-meal-btn" style={s.addBtn} onPress={() => setShowAdd(true)}>
+            <Plus size={20} color="#fff" strokeWidth={3} />
           </TouchableOpacity>
         </View>
 
-        {/* Calorie Ring */}
-        <View style={styles.calorieCard}>
-          <View style={styles.calorieRing}>
-            <View style={styles.ringOuter}>
-              <View style={[styles.ringFill, { height: `${calPct}%` }]} />
-              <View style={styles.ringInner}>
-                <Text style={styles.ringValue}>{Math.round(todayData?.totals?.calories || 0)}</Text>
-                <Text style={styles.ringLabel}>of {calGoal} cal</Text>
-              </View>
+        {/* Calorie Circle */}
+        <View style={s.calCard}>
+          <View style={s.calCircle}>
+            <View style={s.calRing}>
+              <View style={[s.calFill, { height: `${pct}%` }]} />
+            </View>
+            <View style={s.calCenter}>
+              <Text style={s.calValue}>{Math.round(eaten)}</Text>
+              <Text style={s.calLabel}>of {goal} cal</Text>
             </View>
           </View>
-          <View style={styles.macroRow}>
-            <MacroChip label="Protein" value={todayData?.totals?.protein || 0} color={colors.primary} unit="g" />
-            <MacroChip label="Carbs" value={todayData?.totals?.carbs || 0} color={colors.warning} unit="g" />
-            <MacroChip label="Fat" value={todayData?.totals?.fat || 0} color="#EC4899" unit="g" />
+
+          <View style={s.macroRow}>
+            <MacroChip label="Protein" val={todayData?.totals?.protein || 0} color={colors.primary} />
+            <MacroChip label="Carbs" val={todayData?.totals?.carbs || 0} color="#F59E0B" />
+            <MacroChip label="Fat" val={todayData?.totals?.fat || 0} color="#EC4899" />
           </View>
         </View>
 
-        {/* Today's Meals */}
-        <Text style={styles.sectionTitle}>Today's Meals</Text>
-        {todayData?.meals?.length > 0 ? (
-          todayData.meals.map((meal: any, i: number) => {
-            const Icon = mealTypeIcons[meal.meal_type] || Cookie;
-            return (
-              <View key={i} style={styles.mealCard}>
-                <View style={styles.mealIconWrap}><Icon size={18} color={colors.primary} /></View>
-                <View style={styles.mealInfo}>
-                  <Text style={styles.mealName}>{meal.food_name}</Text>
-                  <Text style={styles.mealMeta}>{meal.meal_type} · P:{Math.round(meal.protein)}g C:{Math.round(meal.carbs)}g F:{Math.round(meal.fat)}g</Text>
-                </View>
-                <Text style={styles.mealCal}>{Math.round(meal.calories)} cal</Text>
+        {/* Meals List */}
+        <Text style={s.sectionTitle}>Today's Meals</Text>
+        {todayData?.meals?.length > 0 ? todayData.meals.map((m: any, i: number) => {
+          const Icon = mealIcons[m.meal_type] || Cookie;
+          return (
+            <View key={i} style={s.mealCard}>
+              <View style={s.mealIcon}><Icon size={16} color={colors.primary} /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.mealName}>{m.food_name}</Text>
+                <Text style={s.mealMeta}>{m.meal_type} · P:{Math.round(m.protein)}g C:{Math.round(m.carbs)}g F:{Math.round(m.fat)}g</Text>
               </View>
-            );
-          })
-        ) : (
-          <View style={styles.emptyCard}>
-            <UtensilsCrossed size={32} color={colors.border} />
-            <Text style={styles.emptyText}>No meals logged today</Text>
-            <TouchableOpacity testID="empty-add-meal-btn" style={styles.emptyBtn} onPress={() => setShowAddModal(true)}>
-              <Text style={styles.emptyBtnText}>Log your first meal</Text>
+              <View style={s.calBadge}><Text style={s.calBadgeText}>{Math.round(m.calories)} cal</Text></View>
+            </View>
+          );
+        }) : (
+          <View style={s.emptyCard}>
+            <Text style={s.emptyTitle}>No meals logged</Text>
+            <Text style={s.emptySub}>Tap + to log your first meal</Text>
+            <TouchableOpacity testID="empty-add-meal-btn" style={s.emptyBtn} onPress={() => setShowAdd(true)}>
+              <Text style={s.emptyBtnText}>Log Meal</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -140,63 +112,56 @@ export default function NutritionScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Add Meal Modal */}
-      <Modal visible={showAddModal} animationType="slide" transparent>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Log Meal</Text>
-              <TouchableOpacity testID="close-meal-modal" onPress={() => { setShowAddModal(false); setSearchQuery(''); setSearchResults([]); }}><X size={24} color={colors.textMain} /></TouchableOpacity>
+      {/* Add Modal */}
+      <Modal visible={showAdd} animationType="slide" transparent>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.modalBg}>
+          <View style={s.modalBox}>
+            <View style={s.modalHead}>
+              <Text style={s.modalTitle}>Log Meal</Text>
+              <TouchableOpacity testID="close-meal-modal" onPress={() => { setShowAdd(false); setSearchQ(''); setSearchRes([]); }}><X size={22} color={colors.textMain} /></TouchableOpacity>
             </View>
 
-            {/* Meal Type */}
-            <View style={styles.mealTypeRow}>
+            <View style={s.typeRow}>
               {['breakfast', 'lunch', 'dinner', 'snack'].map(t => {
-                const Icon = mealTypeIcons[t] || Cookie;
+                const I = mealIcons[t] || Cookie;
                 return (
-                  <TouchableOpacity key={t} testID={`meal-type-${t}`} style={[styles.mealTypeChip, selectedMealType === t && styles.mealTypeChipActive]} onPress={() => setSelectedMealType(t)}>
-                    <Icon size={14} color={selectedMealType === t ? colors.primary : colors.textMuted} />
-                    <Text style={[styles.mealTypeText, selectedMealType === t && styles.mealTypeTextActive]}>{t.charAt(0).toUpperCase() + t.slice(1)}</Text>
+                  <TouchableOpacity key={t} testID={`meal-type-${t}`} style={[s.typeChip, mealType === t && s.typeChipActive]} onPress={() => setMealType(t)}>
+                    <I size={13} color={mealType === t ? '#fff' : colors.textSecondary} />
+                    <Text style={[s.typeText, mealType === t && s.typeTextActive]}>{t.charAt(0).toUpperCase() + t.slice(1)}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            {/* Search */}
-            <View style={styles.searchWrap}>
-              <Search size={18} color={colors.textMuted} />
-              <TextInput testID="food-search-input" style={styles.searchInput} placeholder="Search foods..." placeholderTextColor={colors.textMuted} value={searchQuery} onChangeText={handleSearch} />
+            <View style={s.searchWrap}>
+              <Search size={16} color={colors.textMuted} />
+              <TextInput testID="food-search-input" style={s.searchInput} placeholder="Search foods..." placeholderTextColor={colors.textMuted} value={searchQ} onChangeText={handleSearch} />
             </View>
 
-            {searching && <ActivityIndicator style={styles.searchLoader} color={colors.primary} />}
-            
-            {searchResults.length > 0 && (
-              <ScrollView style={styles.searchResults}>
-                {searchResults.map((food, i) => (
-                  <TouchableOpacity key={i} testID={`food-result-${food.id}`} style={styles.searchResultItem} onPress={() => addFromSearch(food)}>
-                    <View style={styles.searchResultInfo}>
-                      <Text style={styles.searchResultName}>{food.name}</Text>
-                      <Text style={styles.searchResultMeta}>P:{food.protein}g C:{food.carbs}g F:{food.fat}g</Text>
-                    </View>
-                    <Text style={styles.searchResultCal}>{food.calories} cal</Text>
+            {searching && <ActivityIndicator style={{ marginVertical: 8 }} color={colors.primary} />}
+            {searchRes.length > 0 && (
+              <ScrollView style={s.searchList}>
+                {searchRes.map((f, i) => (
+                  <TouchableOpacity key={i} testID={`food-result-${f.id}`} style={s.searchItem} onPress={() => addFromSearch(f)}>
+                    <View style={{ flex: 1 }}><Text style={s.searchName}>{f.name}</Text><Text style={s.searchMeta}>P:{f.protein}g C:{f.carbs}g F:{f.fat}g</Text></View>
+                    <Text style={s.searchCal}>{f.calories} cal</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             )}
 
-            {/* Manual Entry */}
-            <Text style={styles.manualTitle}>Or add manually</Text>
-            <TextInput testID="manual-food-name" style={styles.manualInput} placeholder="Food name" placeholderTextColor={colors.textMuted} value={manualFood.food_name} onChangeText={v => setManualFood(p => ({ ...p, food_name: v }))} />
-            <View style={styles.manualRow}>
-              <TextInput testID="manual-calories" style={[styles.manualInput, styles.manualSmall]} placeholder="Calories" placeholderTextColor={colors.textMuted} keyboardType="numeric" value={manualFood.calories} onChangeText={v => setManualFood(p => ({ ...p, calories: v }))} />
-              <TextInput style={[styles.manualInput, styles.manualSmall]} placeholder="Protein" placeholderTextColor={colors.textMuted} keyboardType="numeric" value={manualFood.protein} onChangeText={v => setManualFood(p => ({ ...p, protein: v }))} />
+            <Text style={s.manualLabel}>Or add manually</Text>
+            <TextInput testID="manual-food-name" style={s.manualInput} placeholder="Food name" placeholderTextColor={colors.textMuted} value={manual.food_name} onChangeText={v => setManual(p => ({ ...p, food_name: v }))} />
+            <View style={s.manualRow}>
+              <TextInput testID="manual-calories" style={[s.manualInput, { flex: 1 }]} placeholder="Calories" placeholderTextColor={colors.textMuted} keyboardType="numeric" value={manual.calories} onChangeText={v => setManual(p => ({ ...p, calories: v }))} />
+              <TextInput style={[s.manualInput, { flex: 1 }]} placeholder="Protein" placeholderTextColor={colors.textMuted} keyboardType="numeric" value={manual.protein} onChangeText={v => setManual(p => ({ ...p, protein: v }))} />
             </View>
-            <View style={styles.manualRow}>
-              <TextInput style={[styles.manualInput, styles.manualSmall]} placeholder="Carbs" placeholderTextColor={colors.textMuted} keyboardType="numeric" value={manualFood.carbs} onChangeText={v => setManualFood(p => ({ ...p, carbs: v }))} />
-              <TextInput style={[styles.manualInput, styles.manualSmall]} placeholder="Fat" placeholderTextColor={colors.textMuted} keyboardType="numeric" value={manualFood.fat} onChangeText={v => setManualFood(p => ({ ...p, fat: v }))} />
+            <View style={s.manualRow}>
+              <TextInput style={[s.manualInput, { flex: 1 }]} placeholder="Carbs" placeholderTextColor={colors.textMuted} keyboardType="numeric" value={manual.carbs} onChangeText={v => setManual(p => ({ ...p, carbs: v }))} />
+              <TextInput style={[s.manualInput, { flex: 1 }]} placeholder="Fat" placeholderTextColor={colors.textMuted} keyboardType="numeric" value={manual.fat} onChangeText={v => setManual(p => ({ ...p, fat: v }))} />
             </View>
-            <TouchableOpacity testID="manual-add-btn" style={styles.addMealBtn} onPress={addManual}>
-              <Text style={styles.addMealBtnText}>Add Meal</Text>
+            <TouchableOpacity testID="manual-add-btn" style={s.addMealBtn} onPress={addManual} activeOpacity={0.85}>
+              <Text style={s.addMealBtnText}>Add Meal</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -205,74 +170,73 @@ export default function NutritionScreen() {
   );
 }
 
-function MacroChip({ label, value, color, unit }: { label: string; value: number; color: string; unit: string }) {
+function MacroChip({ label, val, color }: { label: string; val: number; color: string }) {
   return (
-    <View style={chipStyles.chip}>
-      <View style={[chipStyles.dot, { backgroundColor: color }]} />
-      <View>
-        <Text style={chipStyles.value}>{Math.round(value)}{unit}</Text>
-        <Text style={chipStyles.label}>{label}</Text>
-      </View>
+    <View style={mc.chip}>
+      <View style={[mc.dot, { backgroundColor: color }]} />
+      <View><Text style={mc.val}>{Math.round(val)}g</Text><Text style={mc.label}>{label}</Text></View>
     </View>
   );
 }
 
-const chipStyles = StyleSheet.create({
+const mc = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dot: { width: 10, height: 10, borderRadius: 5 },
-  value: { ...typography.body, fontWeight: '700', color: colors.textMain },
-  label: { ...typography.bodySm, color: colors.textMuted, fontSize: 12 },
+  val: { fontSize: 16, fontWeight: '700', color: colors.textMain },
+  label: { fontSize: 11, color: colors.textSecondary },
 });
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: spacing.screen },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.md, marginBottom: spacing.lg },
+  content: { paddingHorizontal: spacing.screen },
+  headRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.md, marginBottom: spacing.lg },
   pageTitle: { ...typography.h1, color: colors.textMain },
-  addBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  calorieCard: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.lg, alignItems: 'center' },
-  calorieRing: { marginBottom: spacing.lg },
-  ringOuter: { width: 140, height: 140, borderRadius: 70, backgroundColor: colors.surfaceSecondary, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  ringFill: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: colors.primaryLight },
-  ringInner: { alignItems: 'center', zIndex: 1 },
-  ringValue: { fontSize: 32, fontWeight: '800', color: colors.textMain, letterSpacing: -1 },
-  ringLabel: { ...typography.bodySm, color: colors.textMuted },
+  addBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...shadows.button },
+
+  calCard: { backgroundColor: colors.cardBlue, borderRadius: radius.xl, padding: 24, alignItems: 'center', marginBottom: spacing.lg, ...shadows.cardLight },
+  calCircle: { marginBottom: 20, position: 'relative' },
+  calRing: { width: 150, height: 150, borderRadius: 75, backgroundColor: colors.surfaceBlue, overflow: 'hidden', justifyContent: 'flex-end' },
+  calFill: { backgroundColor: colors.primaryBg, width: '100%' },
+  calCenter: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  calValue: { fontSize: 36, fontWeight: '800', color: colors.textMain, letterSpacing: -1 },
+  calLabel: { fontSize: 12, color: colors.textSecondary },
   macroRow: { flexDirection: 'row', justifyContent: 'space-around', width: '100%' },
+
   sectionTitle: { ...typography.h3, color: colors.textMain, marginBottom: spacing.md },
-  mealCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm },
-  mealIconWrap: { width: 40, height: 40, borderRadius: 10, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  mealInfo: { flex: 1 },
-  mealName: { ...typography.body, fontWeight: '600', color: colors.textMain },
-  mealMeta: { ...typography.bodySm, color: colors.textMuted, textTransform: 'capitalize' },
-  mealCal: { ...typography.bodySm, fontWeight: '600', color: colors.primary },
-  emptyCard: { alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: spacing.xl, gap: spacing.sm },
-  emptyText: { ...typography.body, fontWeight: '600', color: colors.textMain },
-  emptyBtn: { backgroundColor: colors.primary, borderRadius: radius.sm, paddingHorizontal: 16, paddingVertical: 8 },
-  emptyBtnText: { ...typography.bodySm, fontWeight: '600', color: colors.textInverse },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.screen, maxHeight: '90%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
+  mealCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardBlue, borderRadius: radius.lg, padding: 14, marginBottom: 8 },
+  mealIcon: { width: 38, height: 38, borderRadius: 11, backgroundColor: colors.primaryBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  mealName: { fontSize: 14, fontWeight: '600', color: colors.textMain },
+  mealMeta: { fontSize: 12, color: colors.textSecondary, textTransform: 'capitalize', marginTop: 1 },
+  calBadge: { backgroundColor: colors.primary, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.full },
+  calBadgeText: { fontSize: 11, fontWeight: '700', color: '#fff' },
+
+  emptyCard: { alignItems: 'center', backgroundColor: colors.cardBlue, borderRadius: radius.xl, padding: 32, gap: 8 },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: colors.textMain },
+  emptySub: { fontSize: 13, color: colors.textSecondary },
+  emptyBtn: { backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: radius.full, marginTop: 8 },
+  emptyBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+
+  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalBox: { backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: spacing.screen + 4, maxHeight: '90%' },
+  modalHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   modalTitle: { ...typography.h3, color: colors.textMain },
-  mealTypeRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  mealTypeChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.full, backgroundColor: colors.surfaceSecondary },
-  mealTypeChipActive: { backgroundColor: colors.primaryLight },
-  mealTypeText: { ...typography.bodySm, color: colors.textMuted, fontWeight: '500' },
-  mealTypeTextActive: { color: colors.primary, fontWeight: '600' },
-  searchWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 12, gap: 8, marginBottom: spacing.sm },
-  searchInput: { flex: 1, paddingVertical: 12, fontSize: 16, color: colors.textMain },
-  searchLoader: { marginVertical: spacing.sm },
-  searchResults: { maxHeight: 160, marginBottom: spacing.md },
-  searchResultItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
-  searchResultInfo: { flex: 1 },
-  searchResultName: { ...typography.body, fontWeight: '500', color: colors.textMain },
-  searchResultMeta: { ...typography.bodySm, color: colors.textMuted },
-  searchResultCal: { ...typography.bodySm, fontWeight: '600', color: colors.primary },
-  manualTitle: { ...typography.bodySm, fontWeight: '600', color: colors.textMuted, marginBottom: spacing.sm, marginTop: spacing.sm },
-  manualInput: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.textMain, marginBottom: spacing.sm },
-  manualRow: { flexDirection: 'row', gap: spacing.sm },
-  manualSmall: { flex: 1 },
-  addMealBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: spacing.sm },
-  addMealBtnText: { ...typography.body, fontWeight: '600', color: colors.textInverse },
+  typeRow: { flexDirection: 'row', gap: 8, marginBottom: spacing.md },
+  typeChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.full, backgroundColor: colors.surface },
+  typeChipActive: { backgroundColor: colors.primary },
+  typeText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
+  typeTextActive: { color: '#fff' },
+  searchWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 12, gap: 8 },
+  searchInput: { flex: 1, paddingVertical: 11, fontSize: 14, color: colors.textMain },
+  searchList: { maxHeight: 150, marginVertical: 8 },
+  searchItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  searchName: { fontSize: 14, fontWeight: '500', color: colors.textMain },
+  searchMeta: { fontSize: 11, color: colors.textSecondary },
+  searchCal: { fontSize: 12, fontWeight: '700', color: colors.primary },
+  manualLabel: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginTop: 12, marginBottom: 8 },
+  manualInput: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.textMain, marginBottom: 8 },
+  manualRow: { flexDirection: 'row', gap: 8 },
+  addMealBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: 8, ...shadows.button },
+  addMealBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });
