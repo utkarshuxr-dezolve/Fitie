@@ -1,0 +1,146 @@
+{
+  "theme": "light",
+  "archetype": "Hybrid: 1 (Organic & Earthy) + 4 (Swiss & High-Contrast)",
+  "brand_name": "Fitie",
+  "platform": "React Native Expo",
+  "colors": {
+    "primary": "#4A7C59",
+    "primary_light": "#EBF3ED",
+    "background": "#FFFFFF",
+    "surface": "#F9FAFB",
+    "surface_secondary": "#F3F4F6",
+    "border": "#E5E7EB",
+    "text_main": "#111827",
+    "text_muted": "#6B7280",
+    "text_inverse": "#FFFFFF",
+    "success": "#059669",
+    "warning": "#D97706",
+    "error": "#DC2626"
+  },
+  "typography": {
+    "font_family_heading": "Manrope",
+    "font_family_body": "Inter",
+    "scales": {
+      "h1": { "size": 32, "weight": "800", "tracking": -0.5, "line_height": 40 },
+      "h2": { "size": 24, "weight": "700", "tracking": -0.5, "line_height": 32 },
+      "h3": { "size": 20, "weight": "600", "tracking": -0.2, "line_height": 28 },
+      "body": { "size": 16, "weight": "400", "tracking": 0, "line_height": 24 },
+      "body_sm": { "size": 14, "weight": "400", "tracking": 0, "line_height": 20 },
+      "label": { "size": 12, "weight": "600", "tracking": 0.5, "line_height": 16, "text_transform": "uppercase" }
+    }
+  },
+  "spacing_grid": {
+    "base": 8,
+    "scale": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32,
+      "2xl": 48
+    },
+    "screen_padding": 24
+  },
+  "components": {
+    "cards": {
+      "background": "#F9FAFB",
+      "border": "1px solid #E5E7EB",
+      "border_radius": 16,
+      "padding": 16,
+      "shadow": "0px 2px 8px rgba(0,0,0,0.03)"
+    },
+    "buttons": {
+      "primary": {
+        "background": "#4A7C59",
+        "text_color": "#FFFFFF",
+        "border_radius": 12,
+        "padding_vertical": 16,
+        "padding_horizontal": 24,
+        "font_weight": "600"
+      },
+      "secondary": {
+        "background": "#F3F4F6",
+        "text_color": "#111827",
+        "border_radius": 12,
+        "padding_vertical": 16,
+        "padding_horizontal": 24,
+        "font_weight": "600"
+      }
+    },
+    "bottom_navigation": {
+      "background": "#FFFFFF",
+      "border_top": "1px solid #E5E7EB",
+      "active_icon_color": "#4A7C59",
+      "inactive_icon_color": "#9CA3AF",
+      "active_indicator_bg": "#EBF3ED",
+      "padding_bottom": "env(safe-area-inset-bottom)"
+    },
+    "inputs": {
+      "background": "#F9FAFB",
+      "border": "1px solid #E5E7EB",
+      "border_radius": 12,
+      "padding": 16,
+      "focus_border": "#4A7C59"
+    }
+  },
+  "icons": {
+    "library": "lucide-react-native",
+    "stroke_width": 2,
+    "sizes": {
+      "sm": 16,
+      "md": 24,
+      "lg": 32
+    }
+  },
+  "images": {
+    "nutrition_meals": [
+      {
+        "url": "https://images.unsplash.com/photo-1745793652792-dd1624661142?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwxfHxoZWFsdGh5JTIwZ3JlZW4lMjBzYWxhZCUyMGJvd2x8ZW58MHx8fHwxNzc1MzcwODA2fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Fresh salad in a glass bowl",
+        "category": "meal_log_placeholder"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1685079253777-61c2c0de2956?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwyfHxoZWFsdGh5JTIwZ3JlZW4lMjBzYWxhZCUyMGJvd2x8ZW58MHx8fHwxNzc1MzcwODA2fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Plate topped with a salad covered in hard boiled eggs",
+        "category": "meal_log_placeholder"
+      }
+    ],
+    "activity_workouts": [
+      {
+        "url": "https://images.unsplash.com/photo-1666121363683-1f03bf2e0cc1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBkb2luZyUyMHNxdWF0cyUyMGd5bXxlbnwwfHx8fDE3NzUzNzA4MDZ8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Person lifting weights",
+        "category": "workout_thumbnail"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1609899517237-77d357b047cf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwzfHxwZXJzb24lMjBkb2luZyUyMHNxdWF0cyUyMGd5bXxlbnwwfHx8fDE3NzUzNzA4MDZ8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Woman in black sports bra doing exercise",
+        "category": "workout_thumbnail"
+      }
+    ],
+    "profile_avatars": [
+      {
+        "url": "https://images.unsplash.com/photo-1672685667592-0392f458f46f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzF8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3NTMzOTQ2Mnww&ixlib=rb-4.1.0&q=85",
+        "description": "Man in black hoodie",
+        "category": "user_profile_picture"
+      }
+    ]
+  },
+  "layout_patterns": {
+    "dashboard": "Bento-style grid for daily overview. Metrics like steps, calories, and active minutes in small square cards, primary workout in a large horizontal card.",
+    "scan_machine": "Camera view taking up full screen, with a floating bottom card for detection results (glassmorphism or solid white with heavy border-radius).",
+    "lists": "Card-less lists for exercises. Image on left (56x56 rounded-xl), Text in middle, Action icon on right. 1px bottom border separator.",
+    "health_insights": "Clean typographic layout. Use primary color (muted green) for AI insights highlights."
+  },
+  "testing": {
+    "data_testid_convention": "kebab-case, role-based. e.g. 'home-tab', 'start-workout-button', 'meal-log-input'"
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the 8pt spacing grid.",
+    "Do not use heavy shadows. Keep the app flat and premium, relying on 1px borders (#E5E7EB) and slight background differences (#FFFFFF vs #F9FAFB) for hierarchy.",
+    "Use lucide-react-native for all icons.",
+    "For all headings, ensure tracking is tight (letter-spacing: -0.5px) for a premium look.",
+    "Ensure all buttons and interactive elements have a testID attribute matching the role.",
+    "Use SafeAreaView carefully to handle notches and bottom home indicators properly.",
+    "For Bottom Navigation, do not use generic AI-looking glowing icons. Use a pill shape background behind the active icon, colored #EBF3ED, with the icon itself colored #4A7C59."
+  ]
+}
