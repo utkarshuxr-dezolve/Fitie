@@ -1,11 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Flame, Dumbbell, ChevronRight, Play, Scan, Target, TrendingUp, Zap, Clock } from 'lucide-react-native';
+import { Flame, Dumbbell, ChevronRight, Play, Target, TrendingUp, Zap } from 'lucide-react-native';
 import { useAuth } from '@/src/AuthContext';
 import { progressAPI, nutritionAPI, workoutAPI } from '@/src/api';
 import { colors, spacing, radius, typography, shadows } from '@/src/theme';
+import { SkeletonCard, Skeleton } from '@/src/components/Skeleton';
+import { formatNetworkError } from '@/src/formatError';
+
+const MACRO_MAXS = { protein: 150, carbs: 250, fat: 70 } as const;
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -23,7 +27,9 @@ export default function HomeScreen() {
         progressAPI.getStats(), nutritionAPI.getToday(), workoutAPI.getHistory(3), workoutAPI.getPlans()
       ]);
       setStats(sr.data); setTodayMeals(mr.data); setRecentWorkouts(wr.data); setPlans(pr.data);
-    } catch (e) { console.log('Home load error:', e); }
+    } catch (e: any) {
+      console.log('Home load error:', formatNetworkError(e));
+    }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
@@ -31,20 +37,35 @@ export default function HomeScreen() {
 
   const firstName = user?.name?.split(' ')[0] || 'there';
 
-  if (loading) return <SafeAreaView style={s.safe}><View style={s.center}><ActivityIndicator size="large" color={colors.primary} /></View></SafeAreaView>;
+  if (loading) {
+    return (
+      <SafeAreaView style={s.safe} edges={['top']}>
+        <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+          <Skeleton height={28} width="60%" style={{ marginBottom: spacing.sm }} />
+          <Skeleton height={14} width="45%" style={{ marginBottom: spacing.lg }} />
+          <SkeletonCard />
+          <SkeletonCard />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: spacing.lg }}>
+            <Skeleton width="47%" height={100} />
+            <Skeleton width="47%" height={100} />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <ScrollView style={s.scroll} contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={colors.primary} />} showsVerticalScrollIndicator={false}>
-        
+      <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={colors.primary} />} showsVerticalScrollIndicator={false}>
+
         {/* Greeting */}
         <View style={s.greeting}>
           <View style={{ flex: 1 }}>
             <Text style={s.wave}>Hello, {firstName}</Text>
-            <Text style={s.greetSub}>Let's have a productive workout today!</Text>
+            <Text style={s.greetSub}>Ready for a great day?</Text>
           </View>
           <View style={s.streakPill}>
-            <Flame size={14} color="#F59E0B" />
+            <Flame size={14} color={colors.warning} />
             <Text style={s.streakNum}>{stats?.streak || 0} days</Text>
           </View>
         </View>
@@ -57,15 +78,16 @@ export default function HomeScreen() {
 
         {/* Today's Workout Section Header */}
         <View style={s.sectionRow}>
-          <Text style={s.sectionTitle}>Today's workout</Text>
+          <Text style={s.sectionTitle}>Today&apos;s workout</Text>
           <ChevronRight size={18} color={colors.textMuted} />
         </View>
 
         {/* Daily Challenge - Blue Featured Card */}
         <TouchableOpacity testID="quick-scan-btn" style={s.challengeCard} onPress={() => router.push('/(tabs)/activity')} activeOpacity={0.9}>
+          <View style={s.challengeOverlay} />
           <View style={s.challengeLeft}>
             <Text style={s.challengeLabel}>Daily Challenge</Text>
-            <Text style={s.challengeDesc}>Scan a machine & start your session</Text>
+            <Text style={s.challengeDesc}>Scan a machine &amp; start your session</Text>
           </View>
           <View style={s.challengeBtn}>
             <Text style={s.challengeBtnText}>Start</Text>
@@ -108,7 +130,7 @@ export default function HomeScreen() {
           <TouchableOpacity style={s.miniWorkoutCard} onPress={() => router.push('/(tabs)/activity')} activeOpacity={0.92}>
             <View style={{ flex: 1 }}>
               <Text style={s.miniWorkoutName}>{plans[1].name}</Text>
-              <Text style={s.miniWorkoutMeta}>{plans[1].days_per_week}x/week · {plans[1].duration_weeks} weeks</Text>
+              <Text style={s.miniWorkoutMeta}>{plans[1].days_per_week}x/week &middot; {plans[1].duration_weeks} weeks</Text>
             </View>
             <View style={s.miniStartBtn}>
               <Text style={s.miniStartText}>Start</Text>
@@ -120,10 +142,10 @@ export default function HomeScreen() {
         {/* Stats Grid */}
         <Text style={[s.sectionTitle, { marginTop: spacing.lg }]}>Your Stats</Text>
         <View style={s.statsGrid}>
-          <StatCard icon={Flame} label="Calories" value={`${todayMeals?.totals?.calories || 0}`} color="#F59E0B" bg="#FFFBEB" />
+          <StatCard icon={Flame} label="Calories" value={`${todayMeals?.totals?.calories || 0}`} color={colors.warning} bg={colors.warningBg} />
           <StatCard icon={Dumbbell} label="This Week" value={`${stats?.week_workouts || 0}`} color={colors.primary} bg={colors.primaryBg} />
-          <StatCard icon={TrendingUp} label="Total" value={`${stats?.total_workouts || 0}`} color="#8B5CF6" bg="#F5F3FF" />
-          <StatCard icon={Zap} label="Weight" value={stats?.current_weight ? `${stats.current_weight}kg` : '--'} color="#EC4899" bg="#FDF2F8" />
+          <StatCard icon={TrendingUp} label="Total" value={`${stats?.total_workouts || 0}`} color={colors.purple} bg={colors.infoBg} />
+          <StatCard icon={Zap} label="Weight" value={stats?.current_weight ? `${stats.current_weight}kg` : '--'} color={colors.pink} bg={colors.pinkBg} />
         </View>
 
         {/* Macro Progress */}
@@ -131,9 +153,9 @@ export default function HomeScreen() {
           <>
             <Text style={[s.sectionTitle, { marginTop: spacing.lg }]}>Macro Breakdown</Text>
             <View style={s.macroCard}>
-              <MacroRow label="Protein" val={todayMeals.totals.protein} max={150} color={colors.primary} />
-              <MacroRow label="Carbs" val={todayMeals.totals.carbs} max={250} color="#F59E0B" />
-              <MacroRow label="Fat" val={todayMeals.totals.fat} max={70} color="#EC4899" />
+              <MacroRow label="Protein" val={todayMeals.totals.protein} max={MACRO_MAXS.protein} color={colors.primary} />
+              <MacroRow label="Carbs" val={todayMeals.totals.carbs} max={MACRO_MAXS.carbs} color={colors.warning} />
+              <MacroRow label="Fat" val={todayMeals.totals.fat} max={MACRO_MAXS.fat} color={colors.pink} />
             </View>
           </>
         )}
@@ -147,15 +169,13 @@ export default function HomeScreen() {
                 <View style={s.historyIcon}><Dumbbell size={16} color={colors.primary} /></View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.historyName}>{w.plan_name}</Text>
-                  <Text style={s.historyMeta}>{w.duration_minutes} min · {w.exercises?.length || 0} exercises</Text>
+                  <Text style={s.historyMeta}>{w.duration_minutes} min &middot; {w.exercises?.length || 0} exercises</Text>
                 </View>
                 <View style={s.historyCalBadge}><Text style={s.historyCalText}>{Math.round(w.calories_burned)} cal</Text></View>
               </View>
             ))}
           </>
         )}
-
-        <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -183,7 +203,7 @@ function MacroRow({ label, val, max, color }: { label: string; val: number; max:
 
 const sc = StyleSheet.create({
   card: { width: '47%', borderRadius: radius.lg, padding: 16, marginBottom: spacing.sm, gap: 6 },
-  val: { ...typography.h2, color: colors.textMain },
+  val: { ...typography.statNum, color: colors.textMain },
   label: { fontSize: 12, fontWeight: '500', color: colors.textSecondary },
 });
 
@@ -193,21 +213,20 @@ const mr = StyleSheet.create({
   label: { fontSize: 13, fontWeight: '600', color: colors.textMain },
   val: { fontSize: 13, fontWeight: '700', color: colors.textMain },
   max: { fontWeight: '400', color: colors.textMuted },
-  barBg: { height: 8, backgroundColor: colors.surfaceBlue, borderRadius: 4, overflow: 'hidden' },
-  barFill: { height: 8, borderRadius: 4 },
+  barBg: { height: 10, backgroundColor: colors.surfaceBlue, borderRadius: 5, overflow: 'hidden' },
+  barFill: { height: 10, borderRadius: 5 },
 });
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: spacing.screen },
+  scrollContent: { paddingHorizontal: spacing.screen, paddingBottom: spacing.xxl },
 
   greeting: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.md, marginBottom: 8 },
   wave: { ...typography.h1, color: colors.textMain },
   greetSub: { ...typography.bodySm, color: colors.textSecondary, marginTop: 2 },
-  streakPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFFBEB', paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.full },
-  streakNum: { fontSize: 12, fontWeight: '700', color: '#B45309' },
+  streakPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.warningBg, paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.full },
+  streakNum: { fontSize: 12, fontWeight: '700', color: colors.warningText },
 
   badgeRow: { flexDirection: 'row', gap: 8, marginBottom: spacing.lg },
   badgePill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.primaryBg, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full },
@@ -216,7 +235,8 @@ const s = StyleSheet.create({
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   sectionTitle: { ...typography.h3, color: colors.textMain, marginBottom: spacing.md },
 
-  challengeCard: { backgroundColor: colors.primary, borderRadius: radius.xl, padding: 20, flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md, ...shadows.button },
+  challengeCard: { backgroundColor: colors.primary, borderRadius: radius.xl, padding: 20, flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md, ...shadows.button, overflow: 'hidden', position: 'relative' as const },
+  challengeOverlay: { position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.05)' },
   challengeLeft: { flex: 1 },
   challengeLabel: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 4 },
   challengeDesc: { fontSize: 13, color: 'rgba(255,255,255,0.75)' },
@@ -230,13 +250,13 @@ const s = StyleSheet.create({
   workoutDiffText: { fontSize: 11, fontWeight: '700', color: '#fff', textTransform: 'capitalize' },
   workoutDetailRow: { flexDirection: 'row', marginBottom: 16, gap: 16 },
   workoutDetail: {},
-  workoutDetailLabel: { fontSize: 11, fontWeight: '500', color: colors.textMuted, marginBottom: 2 },
-  workoutDetailVal: { fontSize: 14, fontWeight: '700', color: colors.textMain },
+  workoutDetailLabel: { ...typography.label, color: colors.textMuted, marginBottom: 2 },
+  workoutDetailVal: { ...typography.bodyMd, color: colors.textMain },
   workoutActions: { flexDirection: 'row', gap: 10 },
   workoutSecBtn: { flex: 1, borderWidth: 1.5, borderColor: colors.primary, borderRadius: radius.md, paddingVertical: 11, alignItems: 'center' },
-  workoutSecBtnText: { fontSize: 13, fontWeight: '600', color: colors.primary },
+  workoutSecBtnText: { ...typography.bodyMd, color: colors.primary },
   workoutPrimBtn: { flex: 1, backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 11, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  workoutPrimBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
+  workoutPrimBtnText: { ...typography.bodyMd, color: '#fff' },
 
   miniWorkoutCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.cardBlue, borderRadius: radius.lg, padding: 16, marginBottom: spacing.sm },
   miniWorkoutName: { ...typography.bodyMd, fontWeight: '600', color: colors.textMain },
@@ -250,7 +270,7 @@ const s = StyleSheet.create({
 
   historyItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
   historyIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.primaryBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  historyName: { fontSize: 14, fontWeight: '600', color: colors.textMain },
+  historyName: { ...typography.bodyMd, fontWeight: '600', color: colors.textMain },
   historyMeta: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   historyCalBadge: { backgroundColor: colors.primaryBg, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.full },
   historyCalText: { fontSize: 11, fontWeight: '700', color: colors.primary },

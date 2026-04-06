@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LogOut, Target, Scale, Ruler, Calendar, Edit3, TrendingUp, Award, ChevronRight, Dumbbell, Activity } from 'lucide-react-native';
 import { useAuth } from '@/src/AuthContext';
 import { userAPI, progressAPI } from '@/src/api';
 import { colors, spacing, radius, typography, shadows } from '@/src/theme';
+import { Skeleton, SkeletonCard, SkeletonLine } from '@/src/components/Skeleton';
+import { formatNetworkError } from '@/src/formatError';
 
 const goals = [
   { id: 'weight_loss', label: 'Weight Loss' },
@@ -20,6 +22,9 @@ const levels = [
   { id: 'active', label: 'Active' },
   { id: 'very_active', label: 'Very Active' },
 ];
+
+const WEIGHT_MIN = 20;
+const WEIGHT_MAX = 500;
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -41,7 +46,7 @@ export default function ProfileScreen() {
         name: pr.data.name || '', age: pr.data.age?.toString() || '', weight: pr.data.weight?.toString() || '',
         height: pr.data.height?.toString() || '', goal: pr.data.goal || 'general_fitness', activity_level: pr.data.activity_level || 'moderate'
       });
-    } catch (e) { console.log('Profile err:', e); }
+    } catch (e: any) { console.log('Profile err:', formatNetworkError(e)); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
@@ -50,30 +55,50 @@ export default function ProfileScreen() {
   const saveProfile = async () => {
     setSaving(true);
     try {
-      const up: any = { name: editData.name };
+      const up: Record<string, unknown> = { name: editData.name };
       if (editData.age) up.age = parseInt(editData.age);
       if (editData.weight) up.weight = parseFloat(editData.weight);
       if (editData.height) up.height = parseFloat(editData.height);
       up.goal = editData.goal; up.activity_level = editData.activity_level;
       await userAPI.updateProfile(up); setEditing(false); loadData();
-    } catch { Alert.alert('Error', 'Could not update profile'); }
+    } catch (e: any) { Alert.alert('Update Error', formatNetworkError(e, 'Could not update profile')); }
     finally { setSaving(false); }
   };
 
   const handleLogW = async () => {
     if (!logW) return;
-    try { await progressAPI.logWeight({ weight: parseFloat(logW) }); setLogW(''); loadData(); }
-    catch { Alert.alert('Error', 'Could not log weight'); }
+    const w = parseFloat(logW);
+    if (isNaN(w) || w < WEIGHT_MIN || w > WEIGHT_MAX) {
+      Alert.alert('Invalid Weight', `Weight must be between ${WEIGHT_MIN} and ${WEIGHT_MAX} kg`);
+      return;
+    }
+    try { await progressAPI.logWeight({ weight: w }); setLogW(''); loadData(); }
+    catch (e: any) { Alert.alert('Log Error', formatNetworkError(e, 'Could not log weight')); }
   };
 
   const handleLogout = () => Alert.alert('Sign Out', 'Are you sure?', [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign Out', style: 'destructive', onPress: logout }]);
 
-  if (loading) return <SafeAreaView style={s.safe}><View style={s.center}><ActivityIndicator size="large" color={colors.primary} /></View></SafeAreaView>;
+  if (loading) {
+    return (
+      <SafeAreaView style={s.safe} edges={['top']}>
+        <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={{ alignItems: 'center', paddingVertical: spacing.xl }}>
+            <Skeleton width={88} height={88} borderRadius={44} />
+            <Skeleton height={22} width="50%" style={{ marginTop: 14, marginBottom: 4 }} />
+            <Skeleton height={13} width="35%" style={{ marginBottom: 6 }} />
+          </View>
+          <Skeleton height={80} borderRadius={24} style={{ marginBottom: spacing.lg }} />
+          <SkeletonCard />
+          <SkeletonLine lines={3} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView style={s.scroll} contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={colors.primary} />} showsVerticalScrollIndicator={false}>
+        <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor={colors.primary} />} showsVerticalScrollIndicator={false}>
 
           {/* Profile Header */}
           <View style={s.header}>
@@ -106,7 +131,7 @@ export default function ProfileScreen() {
           {/* Log Weight */}
           <Text style={s.sectionTitle}>Log Weight</Text>
           <View style={s.weightRow}>
-            <TextInput testID="weight-log-input" style={s.weightInput} placeholder="Weight (kg)" placeholderTextColor={colors.textMuted} keyboardType="numeric" value={logW} onChangeText={setLogW} />
+            <TextInput testID="weight-log-input" style={s.weightInput} placeholder={`Weight (${WEIGHT_MIN}\u2013${WEIGHT_MAX} kg)`} placeholderTextColor={colors.textMuted} keyboardType="numeric" value={logW} onChangeText={setLogW} />
             <TouchableOpacity testID="log-weight-btn" style={s.weightBtn} onPress={handleLogW} activeOpacity={0.85}>
               <Scale size={16} color="#fff" />
               <Text style={s.weightBtnText}>Log</Text>
@@ -119,8 +144,9 @@ export default function ProfileScreen() {
               <Text style={s.chartTitle}>Weight Trend</Text>
               <View style={s.chartBars}>
                 {weightHistory.slice(-7).map((e, i) => {
-                  const min = Math.min(...weightHistory.slice(-7).map(x => x.weight));
-                  const max = Math.max(...weightHistory.slice(-7).map(x => x.weight));
+                  const last7 = weightHistory.slice(-7);
+                  const min = Math.min(...last7.map(x => x.weight));
+                  const max = Math.max(...last7.map(x => x.weight));
                   const range = max - min || 1;
                   const pct = ((e.weight - min) / range) * 100;
                   return (
@@ -186,8 +212,6 @@ export default function ProfileScreen() {
             <LogOut size={16} color={colors.error} />
             <Text style={s.logoutText}>Sign Out</Text>
           </TouchableOpacity>
-
-          <View style={{ height: 100 }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -209,15 +233,14 @@ const mi = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, gap: 12 },
   border: { borderBottomWidth: 1, borderBottomColor: colors.borderLight },
   iconW: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.primaryBg, alignItems: 'center', justifyContent: 'center' },
-  label: { fontSize: 14, color: colors.textSecondary, flex: 1 },
+  label: { ...typography.body, color: colors.textSecondary },
   val: { fontSize: 14, fontWeight: '600', color: colors.textMain, marginRight: 4 },
 });
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: spacing.screen },
+  scrollContent: { paddingHorizontal: spacing.screen, paddingBottom: spacing.xxl },
 
   header: { alignItems: 'center', paddingTop: spacing.lg, paddingBottom: spacing.md },
   avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
@@ -240,7 +263,7 @@ const s = StyleSheet.create({
   weightBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 
   chartCard: { backgroundColor: colors.cardBlue, borderRadius: radius.xl, padding: 18, marginBottom: spacing.lg },
-  chartTitle: { fontSize: 14, fontWeight: '600', color: colors.textMain, marginBottom: 14 },
+  chartTitle: { ...typography.bodyMd, fontWeight: '600', color: colors.textMain, marginBottom: 14 },
   chartBars: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 100 },
   barWrap: { alignItems: 'center', flex: 1 },
   barVal: { fontSize: 9, color: colors.textMuted, marginBottom: 4 },
@@ -260,7 +283,7 @@ const s = StyleSheet.create({
   chipText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
   chipTextActive: { color: '#fff' },
   saveBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: 8, ...shadows.button },
-  saveBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  saveBtnText: { ...typography.h3, color: '#fff' },
 
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, marginTop: spacing.md, borderWidth: 1.5, borderColor: colors.error, borderRadius: radius.md },
   logoutText: { fontSize: 14, fontWeight: '600', color: colors.error },

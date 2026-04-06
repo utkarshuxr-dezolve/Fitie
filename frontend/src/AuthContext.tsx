@@ -30,7 +30,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkAuth();
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (token && !cancelled) {
+          const { data } = await authAPI.me();
+          if (!cancelled) setUser({ id: data._id || data.id, ...data });
+        }
+      } catch {
+        if (!cancelled) await AsyncStorage.removeItem('token');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
   }, []);
 
   const checkAuth = async () => {

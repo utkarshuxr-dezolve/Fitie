@@ -22,7 +22,7 @@ export default function LoginScreen() {
       router.replace('/(tabs)');
     } catch (e: any) {
       const d = e?.response?.data?.detail;
-      setError(typeof d === 'string' ? d : 'Invalid email or password');
+      setError(typeof d === 'string' ? d : 'Invalid email or password. Check your credentials and try again.');
     } finally { setLoading(false); }
   };
 

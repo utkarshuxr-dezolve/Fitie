@@ -24,6 +24,16 @@ export const colors = {
   warning: '#F59E0B',
   error: '#EF4444',
 
+  purple: '#8B5CF6',
+  pink: '#EC4899',
+
+  warningBg: '#FFFBEB',
+  infoBg: '#F5F3FF',
+  pinkBg: '#FDF2F8',
+  successBg: '#F0FDF4',
+  errorBg: '#FEF2F2',
+  warningText: '#B45309',
+
   cardWhite: '#FFFFFF',
   cardBlue: '#F0F5FF',
   cardBlueDark: '#0057FF',
@@ -85,4 +95,6 @@ export const typography = {
   bodySm: { fontSize: 13, fontWeight: '400' as const },
   label: { fontSize: 11, fontWeight: '700' as const, letterSpacing: 0.8, textTransform: 'uppercase' as const },
   stat: { fontSize: 36, fontWeight: '800' as const, letterSpacing: -1 },
+  display: { fontSize: 40, fontWeight: '800' as const, letterSpacing: -1 },
+  statNum: { fontSize: 36, fontWeight: '800' as const, letterSpacing: -1 },
 };

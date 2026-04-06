@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -17,6 +17,14 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (res) => res,
+  (error: AxiosError) => {
+    const message = error.response?.data?.detail ?? error.message;
+    return Promise.reject(new Error(message) as AxiosError);
+  }
+);
+
 // Auth
 export const authAPI = {
   register: (data: { email: string; password: string; name: string }) =>
@@ -30,7 +38,8 @@ export const authAPI = {
 // User
 export const userAPI = {
   getProfile: () => api.get('/user/profile'),
-  updateProfile: (data: any) => api.put('/user/profile', data),
+  updateProfile: (data: { name?: string; age?: number; weight?: number; height?: number; goal?: string; activity_level?: string }) =>
+    api.put('/user/profile', data),
 };
 
 // Exercises
@@ -64,7 +73,7 @@ export const nutritionAPI = {
 
 // Health
 export const healthAPI = {
-  uploadReport: (data: { report_type: string; data: any }) =>
+  uploadReport: (data: { report_type: string; data: Record<string, unknown> }) =>
     api.post('/health/report', data),
   getReports: () => api.get('/health/reports'),
 };

@@ -24,7 +24,7 @@ export default function RegisterScreen() {
       router.replace('/(tabs)');
     } catch (e: any) {
       const d = e?.response?.data?.detail;
-      setError(typeof d === 'string' ? d : 'Registration failed. Try again.');
+      setError(typeof d === 'string' ? d : 'Registration failed. Please check your email and try again.');
     } finally { setLoading(false); }
   };
 
