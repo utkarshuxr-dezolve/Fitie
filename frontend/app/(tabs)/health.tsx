@@ -181,10 +181,6 @@ export default function HealthScreen() {
   );
 }
 
-function ActivityIndicator({ size, color }: { size: string; color: string }) {
-  return <View />;
-}
-
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
