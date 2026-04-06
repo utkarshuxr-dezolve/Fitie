@@ -106,8 +106,8 @@ export default function HomeScreen() {
             </View>
             <View style={s.workoutDetailRow}>
               <View style={s.workoutDetail}>
-                <Text style={s.workoutDetailLabel}>Time</Text>
-                <Text style={s.workoutDetailVal}>45 minutes</Text>
+                <Text style={s.workoutDetailLabel}>Duration</Text>
+                <Text style={s.workoutDetailVal}>{plans[0].duration_weeks} weeks</Text>
               </View>
               <View style={s.workoutDetail}>
                 <Text style={s.workoutDetailLabel}>Exercises</Text>
@@ -119,8 +119,8 @@ export default function HomeScreen() {
               </View>
             </View>
             <View style={s.workoutActions}>
-              <TouchableOpacity style={s.workoutSecBtn}><Text style={s.workoutSecBtnText}>See workout</Text></TouchableOpacity>
-              <TouchableOpacity style={s.workoutPrimBtn}><Text style={s.workoutPrimBtnText}>Start workout</Text><Play size={11} color="#fff" fill="#fff" /></TouchableOpacity>
+              <TouchableOpacity style={s.workoutSecBtn} onPress={() => router.push('/(tabs)/activity')}><Text style={s.workoutSecBtnText}>See workout</Text></TouchableOpacity>
+              <TouchableOpacity style={s.workoutPrimBtn} onPress={() => router.push('/(tabs)/activity')}><Text style={s.workoutPrimBtnText}>Start workout</Text><Play size={11} color="#fff" fill="#fff" /></TouchableOpacity>
             </View>
           </TouchableOpacity>
         )}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, TextInput, Alert, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Dumbbell, Scan, ChevronRight, Play, CheckCircle, X, Filter, Search, ArrowLeft, Pause, RotateCcw } from 'lucide-react-native';
+import { Dumbbell, Scan, ChevronRight, Play, CheckCircle, X, Search, ArrowLeft, Pause, RotateCcw } from 'lucide-react-native';
 import { exerciseAPI, workoutAPI, scanAPI } from '@/src/api';
 import { colors, spacing, radius, typography, shadows } from '@/src/theme';
 import { Skeleton, SkeletonCard } from '@/src/components/Skeleton';
@@ -186,7 +186,9 @@ export default function ActivityScreen() {
               <Text style={st.modalTitle}>Equipment Detected</Text>
               <TouchableOpacity testID="close-scan-modal" onPress={() => { setShowScanModal(false); setScanResult(null); }}><X size={22} color={colors.textMain} /></TouchableOpacity>
             </View>
-            {scanLoading ? <View style={st.loadWrap}><ActivityIndicator size="large" color={colors.primary} /><Text style={st.loadText}>Scanning...</Text></View> : scanResult ? (
+            {scanLoading ? <View style={st.loadWrap}><ActivityIndicator size="large" color={colors.primary} /><Text style={st.loadText}>Scanning...</Text></View> : scanResult === null && !scanLoading ? (
+              <View style={st.scanError}><Text style={st.scanErrorText}>No machine detected. Please try again.</Text></View>
+            ) : scanResult ? (
               <>
                 <View style={st.detectedBox}>
                   <Text style={st.detectedName}>{scanResult.detected.name}</Text>
@@ -210,7 +212,7 @@ export default function ActivityScreen() {
       <Modal visible={showWorkoutModal} animationType="slide">
         <SafeAreaView style={st.workoutSafe}>
           <View style={st.workoutHead}>
-            <TouchableOpacity testID="close-workout-modal" onPress={() => setShowWorkoutModal(false)}><ArrowLeft size={22} color={colors.textMain} /></TouchableOpacity>
+            <TouchableOpacity testID="close-workout-modal" onPress={discardWorkout}><ArrowLeft size={22} color={colors.textMain} /></TouchableOpacity>
             <Text style={st.workoutTitle}>{activeWorkout?.plan_name || 'Workout'}</Text>
             <View style={{ width: 22 }} />
           </View>
@@ -304,6 +306,8 @@ const st = StyleSheet.create({
   modalTitle: { ...typography.h3, color: colors.textMain },
   loadWrap: { alignItems: 'center', paddingVertical: 40, gap: 12 },
   loadText: { ...typography.body, color: colors.textSecondary },
+  scanError: { alignItems: 'center', paddingVertical: 32, gap: 8 },
+  scanErrorText: { ...typography.body, color: colors.textMuted, textAlign: 'center' },
   detectedBox: { backgroundColor: colors.primaryBg, borderRadius: radius.lg, padding: 16, marginBottom: spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   detectedName: { ...typography.h3, color: colors.primary, flex: 1 },
   confBadge: { backgroundColor: colors.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },

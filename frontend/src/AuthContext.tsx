@@ -48,36 +48,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true; };
   }, []);
 
-  const checkAuth = async () => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      if (token) {
-        const { data } = await authAPI.me();
-        setUser({ id: data._id || data.id, ...data });
-      }
-    } catch {
-      await AsyncStorage.removeItem('token');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const login = async (email: string, password: string) => {
     const { data } = await authAPI.login({ email, password });
     await AsyncStorage.setItem('token', data.token);
     setUser({ id: data.id, email: data.email, name: data.name });
+    setLoading(false);
   };
 
   const register = async (email: string, password: string, name: string) => {
     const { data } = await authAPI.register({ email, password, name });
     await AsyncStorage.setItem('token', data.token);
     setUser({ id: data.id, email: data.email, name: data.name });
+    setLoading(false);
   };
 
   const logout = async () => {
-    try { await authAPI.logout(); } catch {}
+    try { await authAPI.logout(); } catch (e) { console.log('Logout server error:', e); }
     await AsyncStorage.removeItem('token');
     setUser(null);
+    setLoading(true);
   };
 
   return (

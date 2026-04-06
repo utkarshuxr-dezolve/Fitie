@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Dumbbell } from 'lucide-react-native';
 import { useAuth } from '@/src/AuthContext';
 import { colors, spacing, radius, typography, shadows } from '@/src/theme';
+import { formatNetworkError } from '@/src/formatError';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -21,10 +22,9 @@ export default function RegisterScreen() {
     setError(''); setLoading(true);
     try {
       await register(email.trim(), password, name.trim());
-      router.replace('/(tabs)');
+      router.replace('/onboarding');
     } catch (e: any) {
-      const d = e?.response?.data?.detail;
-      setError(typeof d === 'string' ? d : 'Registration failed. Please check your email and try again.');
+      setError(formatNetworkError(e, 'Registration failed. Please check your email and try again.'));
     } finally { setLoading(false); }
   };
 

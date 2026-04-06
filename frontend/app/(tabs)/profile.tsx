@@ -56,9 +56,9 @@ export default function ProfileScreen() {
     setSaving(true);
     try {
       const up: Record<string, unknown> = { name: editData.name };
-      if (editData.age) up.age = parseInt(editData.age);
-      if (editData.weight) up.weight = parseFloat(editData.weight);
-      if (editData.height) up.height = parseFloat(editData.height);
+      if (editData.age && !isNaN(parseInt(editData.age))) up.age = parseInt(editData.age);
+      if (editData.weight && !isNaN(parseFloat(editData.weight))) up.weight = parseFloat(editData.weight);
+      if (editData.height && !isNaN(parseFloat(editData.height))) up.height = parseFloat(editData.height);
       up.goal = editData.goal; up.activity_level = editData.activity_level;
       await userAPI.updateProfile(up); setEditing(false); loadData();
     } catch (e: any) { Alert.alert('Update Error', formatNetworkError(e, 'Could not update profile')); }

@@ -7,6 +7,7 @@ import { Dumbbell } from 'lucide-react-native';
 import { useAuth } from '@/src/AuthContext';
 import { userAPI } from '@/src/api';
 import { colors, spacing, radius, typography, shadows } from '@/src/theme';
+import { Alert } from 'react-native';
 
 const goals = [
   { id: 'weight_loss', label: 'Weight Loss' },
@@ -37,15 +38,13 @@ export default function OnboardingScreen() {
     setSaving(true);
     try {
       const profile: Record<string, unknown> = { goal, activity_level: activityLevel };
-      if (weight) profile.weight = parseFloat(weight);
-      if (height) profile.height = parseFloat(height);
+      if (weight && !isNaN(parseFloat(weight))) profile.weight = parseFloat(weight);
+      if (height && !isNaN(parseFloat(height))) profile.height = parseFloat(height);
       await userAPI.updateProfile(profile);
       await AsyncStorage.setItem('onboarding_complete', 'true');
       router.replace('/(tabs)');
-    } catch {
-      // Still save onboarding flag so user isn't stuck
-      await AsyncStorage.setItem('onboarding_complete', 'true');
-      router.replace('/(tabs)');
+    } catch (e) {
+      Alert.alert('Setup Error', 'Could not save your preferences. You can update them later in Profile.');
     } finally {
       setSaving(false);
     }

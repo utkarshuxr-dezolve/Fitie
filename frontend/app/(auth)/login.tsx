@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Dumbbell } from 'lucide-react-native';
 import { useAuth } from '@/src/AuthContext';
 import { colors, spacing, radius, typography, shadows } from '@/src/theme';
+import { formatNetworkError } from '@/src/formatError';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -21,8 +22,7 @@ export default function LoginScreen() {
       await login(email.trim(), password);
       router.replace('/(tabs)');
     } catch (e: any) {
-      const d = e?.response?.data?.detail;
-      setError(typeof d === 'string' ? d : 'Invalid email or password. Check your credentials and try again.');
+      setError(formatNetworkError(e, 'Invalid email or password. Check your credentials and try again.'));
     } finally { setLoading(false); }
   };
 

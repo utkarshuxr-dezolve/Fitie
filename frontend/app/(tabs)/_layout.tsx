@@ -1,7 +1,8 @@
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import { View, StyleSheet, Text } from 'react-native';
 import { Home, Dumbbell, UtensilsCrossed, Activity, User } from 'lucide-react-native';
 import { colors } from '@/src/theme';
+import { useAuth } from '@/src/AuthContext';
 
 function TabIcon({ icon: Icon, focused, label }: { icon: any; focused: boolean; label: string }) {
   return (
@@ -19,6 +20,12 @@ function TabIcon({ icon: Icon, focused, label }: { icon: any; focused: boolean; 
 }
 
 export default function TabLayout() {
+  const { user, loading } = useAuth();
+
+  if (!loading && !user) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
   return (
     <Tabs
       screenOptions={{

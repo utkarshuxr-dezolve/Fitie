@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, TextInput, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, TextInput, ActivityIndicator, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, Search, X, Coffee, Sun, Moon, Cookie } from 'lucide-react-native';
 import { nutritionAPI } from '@/src/api';
@@ -30,13 +30,18 @@ export default function NutritionScreen() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleSearch = async (q: string) => {
+  const searchTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearch = (q: string) => {
     setSearchQ(q);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
     if (q.length < 2) { setSearchRes([]); return; }
-    setSearching(true);
-    try { const { data } = await nutritionAPI.searchFoods(q); setSearchRes(data); }
-    catch { setSearchRes([]); }
-    finally { setSearching(false); }
+    searchTimer.current = setTimeout(async () => {
+      setSearching(true);
+      try { const { data } = await nutritionAPI.searchFoods(q); setSearchRes(data); }
+      catch { setSearchRes([]); }
+      finally { setSearching(false); }
+    }, 300);
   };
 
   const addFromSearch = async (food: any) => {
@@ -189,10 +194,6 @@ export default function NutritionScreen() {
       </Modal>
     </SafeAreaView>
   );
-}
-
-function ActivityIndicator({ style, color }: { style?: object; color: string }) {
-  return <View />;
 }
 
 function MacroChip({ label, val, color }: { label: string; val: number; color: string }) {
