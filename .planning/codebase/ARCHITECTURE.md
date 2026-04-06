@@ -1,0 +1,232 @@
+# Fitie Architecture
+
+## High-Level Overview
+
+Fitie is a two-tier fitness app: a **Python/FastAPI backend** serving a REST API backed by MongoDB, and a **React Native/Expo (TypeScript) frontend** that consumes it. The frontend uses `expo-router` for file-based navigation and a React Context (`AuthContext`) for session management.
+
+```
+┌──────────────────────┐         HTTP/JSON          ┌──────────────────────┐
+│   React Native App   │ ──────────────────────►     │   FastAPI Backend    │
+│   (Expo + TS)        │                             │   (Python + MongoDB) │
+│                      │                             │                      │
+│ ┌──────────────────┐ │                             │ ┌──────────────────┐ │
+│ │ AuthContext      │◄┼──────── cookies ─────────── │ │ JWT auth (cookie │ │
+│ │ (session state)  │ │                             │ │  + Bearer token)  │ │
+│ └──────────────────┘ │                             │ └──────────────────┘ │
+│ ┌──────────────────┐ │                             │ ┌──────────────────┐ │
+│ │ api.ts (client)  │ │ ──── POST/GET /api/* ────►  │ │ server.py        │ │
+│ │                  │ │ ◄─────── JSON ───────────── │ │ (all routes)     │ │
+│ └──────────────────┘ │                             │ └──────────────────┘ │
+│ ┌──────────────────┐ │                             │ ┌──────────────────┐ │
+│ │ Screens (tabs)   │ │                             │ │ MongoDB          │ │
+│ │ ┌──┬──┐         │ │                             │ │ collections:     │ │
+│ │ │D │A │H│       │ │                             │ │ users            │ │
+│ │ │S │C │E│       │ │                             │ │ exercises        │ │
+│ │ │H │T │A│       │ │                             │ │ meals            │ │
+│ │ │  │I │L│       │ │                             │ │ workouts         │ │
+│ │ │N │V │T│       │ │                             │ │ workout_plans    │ │
+│ │ │  │  │H│       │ │                             │ │ foods            │ │
+│ │ │  │  │  │       │ │                             │ │ weight_logs      │ │
+│ │ └──┴───┴─       │ │                             │ │ health_reports   │ │
+│ └──────────────────┘ │                             │ └──────────────────┘ │
+└──────────────────────┘                              └──────────────────────┘
+```
+
+## Backend Routes (FastAPI)
+
+The backend exposes a single `APIRouter` with prefix `/api`. All routes mount under `/api/*`.
+
+### Authentication (`/api/auth/*`)
+
+| Method | Route | Auth | Purpose |
+|--------|-------|------|---------|
+| POST | `/api/auth/register` | None | Create user, set JWT access (1hr) and refresh (7 day) cookies |
+| POST | `/api/auth/login` | None | Verify credentials, set JWT cookies |
+| GET | `/api/auth/me` | Required | Returns current user profile (stripped of password) |
+| POST | `/api/auth/logout` | None | Clear both JWT cookies |
+
+**Auth mechanism**: JWT (HS256) stored in httpOnly cookies. The `get_current_user` middleware accepts either the cookie or a `Bearer` token in the `Authorization` header.
+
+### User Profile (`/api/user/*`)
+
+| Method | Route | Auth | Purpose |
+|--------|-------|------|---------|
+| GET | `/api/user/profile` | Required | Get current user profile |
+| PUT | `/api/user/profile` | Required | Update name/age/weight/height/goal/activity_level |
+
+### Exercises (`/api/exercises`, `/api/muscle-groups`, `/api/equipment`)
+
+| Method | Route | Auth | Purpose |
+|--------|-------|------|---------|
+| GET | `/api/exercises` | None | List exercises (filterable by muscle_group, equipment) |
+| GET | `/api/exercises/{id}` | None | Get single exercise by id |
+| GET | `/api/muscle-groups` | None | Distinct list of muscle_group values |
+| GET | `/api/equipment` | None | Distinct list of equipment values |
+
+### Workouts (`/api/workouts/*`)
+
+| Method | Route | Auth | Purpose |
+|--------|-------|------|---------|
+| POST | `/api/workouts/start` | Required | Create a new workout session (status: "active") |
+| POST | `/api/workouts/{id}/complete` | Required | Complete workout, update streak/last_active on user |
+| GET | `/api/workouts/history` | Required | Completed workouts for current user (default 20) |
+| GET | `/api/workouts/active` | Required | Current active (in-progress) workout |
+
+### Nutrition (`/api/meals`, `/api/foods`)
+
+| Method | Route | Auth | Purpose |
+|--------|-------|------|---------|
+| POST | `/api/meals` | Required | Log a meal (food_name, calories, macros, meal_type) |
+| GET | `/api/meals/today` | Required | Today's meals with calorie/macro totals |
+| GET | `/api/meals/history` | Required | Meal history (default 7 days) |
+| GET | `/api/foods/search?q=` | None | Search seeded food database (regex by name) |
+
+### Health Reports (`/api/health/*`)
+
+| Method | Route | Auth | Purpose |
+|--------|-------|------|---------|
+| POST | `/api/health/report` | Required | Submit a health report, get AI-analyzed insights |
+| GET | `/api/health/reports` | Required | List user's health reports |
+
+**Health insights**: Generated by `generate_health_insights()` -- a deterministic stub that returns simulated metrics for `blood_work` and `general_checkup` report types.
+
+### Progress (`/api/progress/*`)
+
+| Method | Route | Auth | Purpose |
+|--------|-------|------|---------|
+| POST | `/api/progress/weight` | Required | Log weight entry, also updates user profile weight |
+| GET | `/api/progress/weight` | Required | Weight history (default 30 days) |
+| GET | `/api/progress/stats` | Required | Dashboard aggregate (total/week workouts, today calories, streak, current weight, goal) |
+
+### AI Chat (`/api/ai/*`)
+
+| Method | Route | Auth | Purpose |
+|--------|-------|------|---------|
+| POST | `/api/ai/chat` | Required | Send message to GPT-4o-mini (via emergent LLM wrapper) with context (general/workout/nutrition/health). Falls back to static responses if the API fails |
+
+### Scan Machine (`/api/scan/*`)
+
+| Method | Route | Auth | Purpose |
+|--------|-------|------|---------|
+| POST | `/api/scan/detect` | Required | Simulated camera-based gym machine detection. Returns a random matching machine + its exercises |
+
+## Frontend Screens
+
+### Routing Strategy
+
+`expo-router` file-based navigation with route groups:
+
+```
+app/
+  _layout.tsx          -- Root Stack: wraps everything in <AuthProvider>, hides headers
+  index.tsx            -- Entry point: checks auth, redirects to (tabs) or (auth)/login
+  +html.tsx            -- HTML shell configuration
+
+  (auth)/              -- Route group (not in tab bar or stack history)
+    _layout.tsx        -- Stack with hidden headers
+    login.tsx          -- Login screen
+    register.tsx       -- Registration screen
+
+  (tabs)/              -- Tab navigator (5 tabs, always visible after auth)
+    _layout.tsx        -- Defines the tab bar with icons
+    index.tsx          -- Dashboard tab (home overview)
+    activity.tsx       -- Activity tab (exercise listing, workout plans, workout execution)
+    health.tsx         -- Health tab (health reports, scan machine)
+    nutrition.tsx      -- Nutrition tab (meal logging, today's totals, food search)
+    profile.tsx        -- Profile tab (user settings, weight logging, workout history, logout)
+```
+
+### Screen-to-Route Mapping
+
+| Screen | Expo Route | Key Backend Endpoints Called |
+|--------|-----------|------------------------------|
+| Login | `/(auth)/login` | `POST /api/auth/login` |
+| Register | `/(auth)/register` | `POST /api/auth/register` |
+| Dashboard | `/(tabs)/` (index) | `GET /api/progress/stats`, `GET /api/auth/me` |
+| Activity | `/(tabs)/activity` | `GET /api/exercises`, `GET /api/workout-plans`, `POST /api/workouts/start`, `POST /api/workouts/{id}/complete`, `GET /api/workouts/history` |
+| Health | `/(tabs)/health` | `POST /api/scan/detect`, `POST /api/health/report`, `GET /api/health/reports`, `POST /api/ai/chat` |
+| Nutrition | `/(tabs)/nutrition` | `POST /api/meals`, `GET /api/meals/today`, `GET /api/foods/search` |
+| Profile | `/(tabs)/profile` | `GET /api/user/profile`, `PUT /api/user/profile`, `POST /api/progress/weight`, `GET /api/progress/weight`, `POST /api/auth/logout` |
+
+## Data Flow
+
+### Authentication Flow
+
+```
+Frontend                         Backend                         MongoDB
+    |                               |
+    |  POST /api/auth/login          |
+    |  {email, password} ----------> |
+    |                               |-- verify_password() --------> | users |
+    |                               |<-----------------------------|       |
+    |  Set-Cookie: access_token     |
+    |  Set-Cookie: refresh_token    |
+    |  {id, email, name, token} <-- |
+    |                               |
+    v  (stored in AuthContext)      v
+```
+
+### Request Flow (Authenticated)
+
+```
+Screen Component
+    |
+    |  calls function from api.ts
+    v
+api.ts (frontend HTTP client)
+    |
+    |  fetch(`${API_BASE}${path}`, { credentials: "include", ... })
+    |  (cookies sent automatically, or Bearer token from AuthContext)
+    v
+FastAPI `get_current_user` middleware
+    |
+    |  decodes JWT from cookie or Authorization header
+    v
+Route handler
+    |
+    |  db.collection.find/insert/update
+    v
+MongoDB
+    |
+    |  returns documents
+    v
+JSON response -> Screen renders data
+```
+
+### Shared State
+
+- **`AuthContext`** (`src/AuthContext.tsx`): React Context that holds `user` object, `loading` state, and `login()`, `register()`, `logout()` functions. Consumed by the root index.tsx for redirect logic and by all screens for auth-dependent rendering.
+- **`api.ts`** (`src/api.ts`): Thin HTTP client module. Wraps `fetch` calls to the backend, handles token injection via AuthContext.
+- **`theme.ts`** (`src/theme.ts`): Shared color palette and style tokens used across all screens.
+
+### Database Collections
+
+| Collection | Seeded At Startup? | Written By |
+|-----------|--------------------|------------|
+| `users` | Admin user seeded | register, profile update, weight log |
+| `exercises` | 23 exercises seeded | read-only (never mutated after seed) |
+| `exercise_types` | No | read-only |
+| `foods` | 18 foods seeded | read-only (never mutated after seed) |
+| `meals` | No | POST /api/meals |
+| `workouts` | No | POST /api/workouts/start, /complete |
+| `workout_plans` | 3 plans seeded | read-only for defaults |
+| `weight_logs` | No | POST /api/progress/weight |
+| `health_reports` | No | POST /api/health/report |
+
+## Component Boundaries
+
+### Layer Separation
+
+```
+Presentation Layer         State Layer           Network Layer           Backend
+(Screens)                  (AuthContext)          (api.ts)                (server.py)
+─────────────────          ─────────────          ─────────        ─────────────
+index.tsx ──────────────►  AuthContext ──────►    api.ts  ───────►   /api/auth/*
+activity.tsx ─────────────────────┐              api.ts  ───────►   /api/exercises
+health.tsx ───────────────────────┤              api.ts  ───────►   /api/ai/*      │
+nutrition.tsx ────────────────────┤              api.ts  ───────►   /api/workouts  │
+profile.tsx ──────────────────────┘              api.ts  ───────►   /api/user/*    ▼
+theme.ts ───────────────────► (constrained by) ─────────────                          MongoDB
+```
+
+Each tab screen is self-contained: it calls `api.ts` functions directly, reads `user` from `AuthContext`, and styles with `theme.ts`. There is no intermediate state management layer (no Redux, Zustand, etc.) -- screens manage their own local `useState`.
