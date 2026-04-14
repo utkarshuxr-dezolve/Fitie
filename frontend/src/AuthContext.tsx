@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { await authAPI.logout(); } catch (e) { console.log('Logout server error:', e); }
     await AsyncStorage.removeItem('token');
     setUser(null);
-    setLoading(true);
+    setLoading(false);
   };
 
   return (

@@ -59,7 +59,7 @@ export default function RegisterScreen() {
             </View>
 
             <TouchableOpacity testID="register-submit-button" style={s.primaryBtn} onPress={handleRegister} disabled={loading} activeOpacity={0.85}>
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.primaryBtnText}>Create Account</Text>}
+              {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={s.primaryBtnText}>Create Account</Text>}
             </TouchableOpacity>
           </View>
 

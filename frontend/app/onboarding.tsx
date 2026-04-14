@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -7,7 +7,6 @@ import { Dumbbell } from 'lucide-react-native';
 import { useAuth } from '@/src/AuthContext';
 import { userAPI } from '@/src/api';
 import { colors, spacing, radius, typography, shadows } from '@/src/theme';
-import { Alert } from 'react-native';
 
 const goals = [
   { id: 'weight_loss', label: 'Weight Loss' },
@@ -43,7 +42,7 @@ export default function OnboardingScreen() {
       await userAPI.updateProfile(profile);
       await AsyncStorage.setItem('onboarding_complete', 'true');
       router.replace('/(tabs)');
-    } catch (e) {
+    } catch {
       Alert.alert('Setup Error', 'Could not save your preferences. You can update them later in Profile.');
     } finally {
       setSaving(false);

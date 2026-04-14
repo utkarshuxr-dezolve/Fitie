@@ -40,7 +40,7 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <SafeAreaView style={s.safe} edges={['top']}>
-        <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+        <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
           <Skeleton height={28} width="60%" style={{ marginBottom: spacing.sm }} />
           <Skeleton height={14} width="45%" style={{ marginBottom: spacing.lg }} />
           <SkeletonCard />

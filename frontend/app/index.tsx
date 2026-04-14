@@ -27,16 +27,12 @@ export default function Index() {
     );
   }
 
+  // Auth has resolved — now route based on user + onboarding
   if (!onboardingComplete) {
-    if (user) return <Redirect href="/onboarding" />;
-    return <Redirect href="/(auth)/login" />;
+    return <Redirect href={user ? "/onboarding" : "/(auth)/login"} />;
   }
 
-  if (user) {
-    return <Redirect href="/(tabs)" />;
-  }
-
-  return <Redirect href="/(auth)/login" />;
+  return <Redirect href={user ? "/(tabs)" : "/(auth)/login"} />;
 }
 
 const styles = StyleSheet.create({

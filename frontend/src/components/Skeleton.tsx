@@ -20,6 +20,7 @@ export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style 
     );
     anim.start();
     return () => anim.stop();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- opacity is a ref (.current), always refers to same Animated.Value
   }, []);
 
   return (

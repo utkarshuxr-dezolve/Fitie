@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, Search, X, Coffee, Sun, Moon, Cookie } from 'lucide-react-native';
 import { nutritionAPI } from '@/src/api';
 import { colors, spacing, radius, typography, shadows } from '@/src/theme';
-import { Skeleton, SkeletonCard, SkeletonLine } from '@/src/components/Skeleton';
+import { Skeleton } from '@/src/components/Skeleton';
 import { formatNetworkError } from '@/src/formatError';
 import { useAuth } from '@/src/AuthContext';
 
@@ -29,6 +29,11 @@ export default function NutritionScreen() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Cleanup search timer on unmount
+  useEffect(() => {
+    return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
+  }, []);
 
   const searchTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -74,7 +79,8 @@ export default function NutritionScreen() {
             <Skeleton height={44} width={44} borderRadius={14} />
           </View>
           <Skeleton height={200} borderRadius={24} style={{ marginBottom: spacing.lg }} />
-          <SkeletonLine lines={2} />
+          <Skeleton height={16} width="60%" style={{ marginBottom: 12 }} />
+          <Skeleton height={16} width="40%" />
         </ScrollView>
       </SafeAreaView>
     );

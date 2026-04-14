@@ -79,7 +79,10 @@ export default function ActivityScreen() {
     } catch (e: any) { Alert.alert('Error', formatNetworkError(e, 'Could not complete workout')); }
   };
 
-  const discardWorkout = () => {
+  const discardWorkout = async () => {
+    if (activeWorkout?.id) {
+      try { await workoutAPI.cancel(activeWorkout.id); } catch { /* ignore */ }
+    }
     setShowWorkoutModal(false);
     setActiveWorkout(null);
     setWorkoutTimer(0);
@@ -157,18 +160,21 @@ export default function ActivityScreen() {
 
         {/* Exercises */}
         <Text style={st.sectionTitle}>Exercises</Text>
-        {filtered.map(ex => (
-          <TouchableOpacity key={ex.id} testID={`exercise-${ex.id}`} style={[st.exCard, selectedExercises.includes(ex.id) && st.exCardSel]} onPress={() => toggleEx(ex.id)} activeOpacity={0.85}>
-            <View style={[st.exIcon, selectedExercises.includes(ex.id) && st.exIconSel]}>
-              <Dumbbell size={16} color={selectedExercises.includes(ex.id) ? '#fff' : colors.primary} strokeWidth={2.5} />
+        {filtered.map(ex => {
+          const isSelected = selectedExercises.includes(ex.id);
+          return (
+          <TouchableOpacity key={ex.id} testID={`exercise-${ex.id}`} style={[st.exCard, isSelected && st.exCardSel]} onPress={() => toggleEx(ex.id)} activeOpacity={0.85}>
+            <View style={[st.exIcon, isSelected && st.exIconSel]}>
+              <Dumbbell size={16} color={isSelected ? '#fff' : colors.primary} strokeWidth={2.5} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={st.exName}>{ex.name}</Text>
               <Text style={st.exMeta}>{ex.muscle_group} &middot; {ex.equipment} &middot; {ex.difficulty}</Text>
             </View>
-            {selectedExercises.includes(ex.id) ? <CheckCircle size={20} color={colors.primary} /> : <ChevronRight size={16} color={colors.textMuted} />}
+            {isSelected ? <CheckCircle size={20} color={colors.primary} /> : <ChevronRight size={16} color={colors.textMuted} />}
           </TouchableOpacity>
-        ))}
+          );
+        })}
 
         {selectedExercises.length > 0 && (
           <TouchableOpacity testID="start-workout-btn" style={st.startBtn} onPress={() => startWorkout()} activeOpacity={0.85}>

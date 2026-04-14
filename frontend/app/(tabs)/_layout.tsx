@@ -9,7 +9,7 @@ function TabIcon({ icon: Icon, focused, label }: { icon: any; focused: boolean; 
     <View style={styles.tabItem}>
       {focused ? (
         <View style={styles.activeWrap}>
-          <Icon size={20} color={colors.textInverse} strokeWidth={2.5} />
+          <Icon size={20} color={colors.primary} strokeWidth={2.5} />
         </View>
       ) : (
         <Icon size={22} color={colors.tabInactive} strokeWidth={1.8} />
@@ -34,11 +34,11 @@ export default function TabLayout() {
         tabBarShowLabel: false,
       }}
     >
-      <Tabs.Screen name="index" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Home} focused={focused} label="Home" />, tabBarTestID: 'home-tab' }} />
-      <Tabs.Screen name="activity" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Dumbbell} focused={focused} label="Activity" />, tabBarTestID: 'activity-tab' }} />
-      <Tabs.Screen name="nutrition" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={UtensilsCrossed} focused={focused} label="Nutrition" />, tabBarTestID: 'nutrition-tab' }} />
-      <Tabs.Screen name="health" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Activity} focused={focused} label="Health" />, tabBarTestID: 'health-tab' }} />
-      <Tabs.Screen name="profile" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={User} focused={focused} label="Profile" />, tabBarTestID: 'profile-tab' }} />
+      <Tabs.Screen name="index" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Home} focused={focused} label="Home" /> }} />
+      <Tabs.Screen name="activity" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Dumbbell} focused={focused} label="Activity" /> }} />
+      <Tabs.Screen name="nutrition" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={UtensilsCrossed} focused={focused} label="Nutrition" /> }} />
+      <Tabs.Screen name="health" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Activity} focused={focused} label="Health" /> }} />
+      <Tabs.Screen name="profile" options={{ tabBarIcon: ({ focused }) => <TabIcon icon={User} focused={focused} label="Profile" /> }} />
     </Tabs>
   );
 }

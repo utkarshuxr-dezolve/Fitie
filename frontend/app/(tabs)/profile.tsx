@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LogOut, Target, Scale, Ruler, Calendar, Edit3, TrendingUp, Award, ChevronRight, Dumbbell, Activity } from 'lucide-react-native';
+import { LogOut, Target, Scale, Ruler, Calendar, Edit3, ChevronRight, Activity } from 'lucide-react-native';
 import { useAuth } from '@/src/AuthContext';
 import { userAPI, progressAPI } from '@/src/api';
 import { colors, spacing, radius, typography, shadows } from '@/src/theme';
@@ -17,17 +17,17 @@ const goals = [
 ];
 const levels = [
   { id: 'sedentary', label: 'Sedentary' },
-  { id: 'light', label: 'Light' },
-  { id: 'moderate', label: 'Moderate' },
-  { id: 'active', label: 'Active' },
-  { id: 'very_active', label: 'Very Active' },
+  { id: 'light', label: 'Lightly Active' },
+  { id: 'moderate', label: 'Moderately Active' },
+  { id: 'active', label: 'Very Active' },
+  { id: 'very_active', label: 'Extremely Active' },
 ];
 
 const WEIGHT_MIN = 20;
 const WEIGHT_MAX = 500;
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
   const [weightHistory, setWeightHistory] = useState<any[]>([]);
@@ -56,9 +56,23 @@ export default function ProfileScreen() {
     setSaving(true);
     try {
       const up: Record<string, unknown> = { name: editData.name };
-      if (editData.age && !isNaN(parseInt(editData.age))) up.age = parseInt(editData.age);
-      if (editData.weight && !isNaN(parseFloat(editData.weight))) up.weight = parseFloat(editData.weight);
-      if (editData.height && !isNaN(parseFloat(editData.height))) up.height = parseFloat(editData.height);
+      if (editData.age) {
+        const a = parseInt(editData.age);
+        if (isNaN(a) || a <= 0) { Alert.alert('Invalid Age', 'Age must be a positive number'); setSaving(false); return; }
+        up.age = a;
+      }
+      if (editData.weight) {
+        const w = parseFloat(editData.weight);
+        if (isNaN(w) || w < WEIGHT_MIN || w > WEIGHT_MAX) {
+          Alert.alert('Invalid Weight', `Weight must be between ${WEIGHT_MIN} and ${WEIGHT_MAX} kg`); setSaving(false); return;
+        }
+        up.weight = w;
+      }
+      if (editData.height) {
+        const h = parseFloat(editData.height);
+        if (isNaN(h) || h <= 0 || h > 300) { Alert.alert('Invalid Height', 'Height must be a positive number under 300 cm'); setSaving(false); return; }
+        up.height = h;
+      }
       up.goal = editData.goal; up.activity_level = editData.activity_level;
       await userAPI.updateProfile(up); setEditing(false); loadData();
     } catch (e: any) { Alert.alert('Update Error', formatNetworkError(e, 'Could not update profile')); }
@@ -143,20 +157,22 @@ export default function ProfileScreen() {
             <View style={s.chartCard}>
               <Text style={s.chartTitle}>Weight Trend</Text>
               <View style={s.chartBars}>
-                {weightHistory.slice(-7).map((e, i) => {
+                {(() => {
                   const last7 = weightHistory.slice(-7);
                   const min = Math.min(...last7.map(x => x.weight));
                   const max = Math.max(...last7.map(x => x.weight));
                   const range = max - min || 1;
-                  const pct = ((e.weight - min) / range) * 100;
-                  return (
-                    <View key={i} style={s.barWrap}>
-                      <Text style={s.barVal}>{e.weight}</Text>
-                      <View style={s.barBg}><View style={[s.barFill, { height: `${Math.max(pct, 15)}%` }]} /></View>
-                      <Text style={s.barDate}>{e.date?.slice(5)}</Text>
-                    </View>
-                  );
-                })}
+                  return last7.map((e, i) => {
+                    const pct = ((e.weight - min) / range) * 100;
+                    return (
+                      <View key={i} style={s.barWrap}>
+                        <Text style={s.barVal}>{e.weight}</Text>
+                        <View style={s.barBg}><View style={[s.barFill, { height: `${Math.max(pct, 15)}%` }]} /></View>
+                        <Text style={s.barDate}>{e.date?.slice(5)}</Text>
+                      </View>
+                    );
+                  });
+                })()}
               </View>
             </View>
           )}

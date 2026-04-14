@@ -78,12 +78,12 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity testID="login-submit-button" style={s.primaryBtn} onPress={handleLogin} disabled={loading} activeOpacity={0.85}>
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.primaryBtnText}>Sign In</Text>}
+              {loading ? <ActivityIndicator color="colors.textInverse" /> : <Text style={s.primaryBtnText}>Sign In</Text>}
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity testID="login-to-register" style={s.linkBtn} onPress={() => router.push('/(auth)/register')}>
-            <Text style={s.linkText}>Don't have an account? <Text style={s.linkBold}>Create one</Text></Text>
+            <Text style={s.linkText}>Don&apos;t have an account? <Text style={s.linkBold}>Create one</Text></Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>

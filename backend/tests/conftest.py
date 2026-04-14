@@ -24,7 +24,7 @@ def admin_token(base_url):
     session.headers.update({"Content-Type": "application/json"})
     response = session.post(f"{base_url}/api/auth/login", json={
         "email": "admin@fitie.com",
-        "password": "admin123"
+        "password": os.environ.get("ADMIN_PASSWORD", "fitie_admin_2026!")
     })
     if response.status_code != 200:
         pytest.skip(f"Admin login failed: {response.status_code}")

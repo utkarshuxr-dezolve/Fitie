@@ -20,8 +20,10 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (res) => res,
   (error: AxiosError) => {
-    const message = error.response?.data?.detail ?? error.message;
-    return Promise.reject(new Error(message) as AxiosError);
+    if (error.response?.status === 401) {
+      AsyncStorage.removeItem('token');
+    }
+    return Promise.reject(error);
   }
 );
 
@@ -57,6 +59,7 @@ export const workoutAPI = {
     api.post('/workouts/start', data),
   complete: (id: string, data: { duration_minutes: number; calories_burned?: number; notes?: string }) =>
     api.post(`/workouts/${id}/complete`, data),
+  cancel: (id: string) => api.post(`/workouts/${id}/cancel`),
   getHistory: (limit?: number) => api.get('/workouts/history', { params: { limit } }),
   getActive: () => api.get('/workouts/active'),
   getPlans: () => api.get('/workout-plans'),
